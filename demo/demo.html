@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Thinking Orbs — 新设计 5 态 + 原版 9 态</title>
+<style>
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,"Segoe UI",sans-serif; background:#0d0d0d; color:#eee; margin:0; padding:40px; transition:background .3s,color .3s; }
+  h1 { font-size:20px; margin:0 0 6px; font-weight:600; }
+  .sub { color:#888; font-size:13px; }
+  .sec { font-size:14px; font-weight:600; margin:36px 0 14px; color:#bbb; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:18px; }
+  .grid.v2 { grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); }
+  .card { background:#161616; border:1px solid #242424; border-radius:14px; padding:18px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .row { display:flex; align-items:center; gap:18px; }
+  canvas { display:block; }
+  .name { font-size:13px; color:#ddd; }
+  .desc { font-size:11px; color:#777; text-align:center; line-height:1.5; }
+  .actions { margin:16px 0 0; display:flex; gap:12px; align-items:center; }
+  button { background:#222; color:#eee; border:1px solid #3a3a3a; border-radius:8px; padding:6px 14px; font-size:13px; cursor:pointer; }
+  body.light { background:#f4f4f2; color:#222; }
+  body.light .card { background:#fff; border-color:#e4e4e4; }
+  body.light .name { color:#222; }
+  body.light .desc, body.light .sub { color:#888; }
+  body.light .sec { color:#555; }
+  body.light button { background:#fff; color:#222; border-color:#ccc; }
+</style>
+</head>
+<body>
+  <h1>Thinking Orbs</h1>
+  <div class="sub">上：重新设计的 5 个状态（128px / 64px）　下：原版 9 个作对照</div>
+  <div class="actions"><button id="toggleDark">切换深/浅色</button><span class="sub">当前：<b id="darkLabel">dark</b></span></div>
+
+  <div class="sec">✦ 新设计 · 5 个状态</div>
+  <div id="grid-v2" class="grid v2"></div>
+
+  <div class="sec">✦ 原版 9 个（对照）</div>
+  <div id="grid-original" class="grid"></div>
+
+<script src="dist/thinking-orbs.js"></script>
+<script src="orbs-v2.js"></script>
+<script>
+var dark = true, cells = [];
+
+function addCanvas(parent, size, fn) {
+  var dpr = Math.min(2, window.devicePixelRatio || 1), c = document.createElement('canvas');
+  c.width = Math.round(size * dpr); c.height = Math.round(size * dpr);
+  c.style.width = size + 'px'; c.style.height = size + 'px';
+  parent.appendChild(c);
+  cells.push({ ctx: c.getContext('2d'), size: size, dpr: dpr, fn: fn });
+}
+function addCard(grid, name, desc) {
+  var card = document.createElement('div'); card.className = 'card';
+  var row = document.createElement('div'); row.className = 'row';
+  var nm = document.createElement('div'); nm.className = 'name'; nm.textContent = name;
+  card.appendChild(row); card.appendChild(nm);
+  if (desc) { var ds = document.createElement('div'); ds.className = 'desc'; ds.textContent = desc; card.appendChild(ds); }
+  grid.appendChild(card);
+  return row;
+}
+
+// ---- 新设计 5 个 ----
+var V2 = [
+  ['working',    'working',    '环面纽结流：粒子沿纽结奔流、互相超车，带拖尾'],
+  ['searching',  'searching',  '探照巡航：光束在球面巡航，移动→停驻→再出发，照到处安静亮起'],
+  ['solving',    'solving',    '混沌→秩序：波次归位成球 → 螺旋重组为立方 → 溃散'],
+  ['listening',  'listening',  '声场水面：中心随语音包络起伏，涟漪向外扩散'],
+  ['connecting', 'connecting', '神经突触：点线弧自己长出，抵达时节点脉冲']
+];
+var gV2 = document.getElementById('grid-v2');
+V2.forEach(function (it) {
+  var row = addCard(gV2, it[1], it[2]), mode = OrbsV2.modes[it[0]];
+  var draw = function (ctx, size, t) { OrbsV2.paint(ctx, mode(size, t), dark); };
+  addCanvas(row, 128, draw);
+  addCanvas(row, 64, draw);
+});
+
+// ---- 原版 9 个 ----
+var ORIGINAL = ['working','searching','solving','listening','connecting','weaving','composing','breathing','shaping'];
+var gO = document.getElementById('grid-original');
+ORIGINAL.forEach(function (s) {
+  var row = addCard(gO, s), r = ThinkingOrbs.resolvePreset(s, 64);
+  addCanvas(row, 64, function (ctx, size, t) { r.draw(ctx, size, t * r.speed, dark, r.opts); });
+});
+
+// ---- 统一 rAF 循环（切后台自动暂停） ----
+function loop() {
+  var t = performance.now() / 1000;
+  for (var i = 0; i < cells.length; i++) {
+    var c = cells[i];
+    c.ctx.setTransform(c.dpr, 0, 0, c.dpr, 0, 0);
+    c.ctx.clearRect(0, 0, c.size, c.size);
+    c.fn(c.ctx, c.size, t);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+document.getElementById('toggleDark').onclick = function () {
+  dark = !dark;
+  document.body.classList.toggle('light', !dark);
+  document.getElementById('darkLabel').textContent = dark ? 'dark' : 'light';
+};
+</script>
+</body>
+</html>
+
+
+
