@@ -4,3 +4,7 @@ dist/
 *.log
 verify-nebula.mjs
 check-js.cjs
+
+# build
+dist/
+node_modules/
